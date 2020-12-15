@@ -30,7 +30,10 @@
 #include "AudioStream.h"
 #include "utility/dspinst.h"
 
-#if defined(__MK66FX1M0__)
+#if defined(__IMXRT1062__)
+  // 4.00 second maximum on Teensy 4.0
+  #define DELAY_QUEUE_SIZE  (176512 / AUDIO_BLOCK_SAMPLES)
+#elif defined(__MK66FX1M0__)
   // 2.41 second maximum on Teensy 3.6
   #define DELAY_QUEUE_SIZE  (106496 / AUDIO_BLOCK_SAMPLES)
 #elif defined(__MK64FX512__)
@@ -100,10 +103,14 @@ private:
 		maxblocks = max;
 	}
 	uint8_t activemask;   // which output channels are active
-	uint8_t headindex;    // head index (incoming) data in quueu
-	uint8_t tailindex;    // tail index (outgoing) data from queue
-	uint8_t maxblocks;    // number of blocks needed in queue
+	uint16_t headindex;    // head index (incoming) data in quueu
+	uint16_t tailindex;    // tail index (outgoing) data from queue
+	uint16_t maxblocks;    // number of blocks needed in queue
+#if DELAY_QUEUE_SIZE * AUDIO_BLOCK_SAMPLES < 65535
 	uint16_t position[8]; // # of sample delay for each channel
+#else
+	uint32_t position[8]; // # of sample delay for each channel
+#endif
 	audio_block_t *queue[DELAY_QUEUE_SIZE];
 	audio_block_t *inputQueueArray[1];
 };
